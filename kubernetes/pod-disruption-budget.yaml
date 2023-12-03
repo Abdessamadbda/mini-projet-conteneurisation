@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: exam-pdb
+  namespace: exam
+spec:
+  maxUnavailable: 1
+  selector:
+    matchExpressions:
+    - {key: app, operator: In, values: [mysql, backend, frontend]}

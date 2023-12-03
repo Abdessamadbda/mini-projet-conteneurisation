@@ -1,0 +1,41 @@
+version: '3.8'
+services:
+  mysqlservice:
+    image: mysql
+    container_name: mysqlservice
+    ports:
+    - 3306:3306
+    networks:
+    - projectnetwork
+    volumes:
+    - dbvol:/data/mydb
+    - dbvolconfig:/data/configmydb
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: mini_projet
+  spring-boot-backend:
+    image: 192.168.56.101:5000/spring-boot-backend:1.0.0
+    container_name: spring-boot-backend
+    ports:
+    - 8080:8080
+    networks:
+    - projectnetwork
+    depends_on:
+    - mysqlservice
+  angular-frontend:
+    image: 192.168.56.101:5000/angular-frontend:1.0.0
+    container_name: angular-frontend
+    ports:
+    - 3000:80
+    networks:
+    - projectnetwork
+    depends_on:
+    - spring-boot-backend
+volumes:
+  dbvol:
+    driver: local
+  dbvolconfig:
+    driver: local
+networks:
+  projectnetwork:
+    driver: bridge

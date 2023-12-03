@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: exam
+data:
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql-service:3306/mini_projet?useSSL=false&allowPublicKeyRetrieval=true&allowEmptyPassword=yes&createDatabaseIfNotExist=true&autoReconnect=true
+  SPRING_DATASOURCE_USERNAME: root
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-boot-backend
+  namespace: exam
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: exam
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: abdessamadbda/spring-boot-backend:0.2
+        ports:
+        - containerPort: 8080
+        env:
+          - name: SPRING_DATASOURCE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: backend-config
+                key: SPRING_DATASOURCE_URL
+          - name: SPRING_DATASOURCE_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: backend-config
+                key: SPRING_DATASOURCE_USERNAME
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: MYSQL_ROOT_PASSWORD
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/application_ready
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/application_ready
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        startupProbe:
+          exec:
+            command:
+            - test
+            - -e
+            - /tmp/application_ready  
+          failureThreshold: 30
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-backend-ingress
+  namespace: exam
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/add-base-url: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: backend.service.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: spring-boot-backend
+                port:
+                  number: 8080
