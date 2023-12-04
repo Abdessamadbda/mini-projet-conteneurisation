@@ -8,3 +8,10 @@ spec:
   instances: 3
   router:
     instances: 1
+  users:
+    - name: root
+      passwordSecret:
+        secretName: mypwds
+        passwordKey: rootPassword
+      defaultRoles:
+        - ALL PRIVILEGES
