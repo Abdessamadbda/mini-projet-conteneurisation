@@ -1,0 +1,12 @@
+apiVersion: skaffold/v2beta3
+kind: Config
+build:
+  artifacts:
+    - image: abdessamadbda/angular_frontend
+      context: angular-16-crud-example
+    - image: abdessamadbda/spring_boot_backend
+      context: spring-boot-data-jpa-mysql
+deploy:
+  kubectl:
+    manifests:
+      - kubernetes/*
